@@ -90,6 +90,7 @@ class _ArrowAppState extends State<ArrowApp> {
   Color _textColor = Colors.black;
   double _textSize = 14.0;
   Color _textBgColor = Colors.white70;
+  bool _isModified = false;
 
   @override
   void initState() {
@@ -158,6 +159,7 @@ class _ArrowAppState extends State<ArrowApp> {
       _imageLoaded = true;
       _arrows.clear();
       _lastSavedName = null;
+      _isModified = false;
     });
   }
 
@@ -185,13 +187,31 @@ class _ArrowAppState extends State<ArrowApp> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                _saveSettings();
-                Navigator.pop(context);
-                setState(() {});
-              },
-              child: const Text("Done"),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () {
+                    _loadSettings();
+                    setState(() {});
+                  },
+                  child: const Text("Load"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _saveSettings();
+                    Navigator.pop(context);
+                    setState(() {});
+                  },
+                  child: const Text("Save"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() {});
+                  },
+                  child: const Text("Set"),
+                ),
+              ],
             ),
           ],
         ),
@@ -212,7 +232,7 @@ class _ArrowAppState extends State<ArrowApp> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left:16),
+          padding: const EdgeInsets.only(left: 16),
           child: Text("$title: ${val.toStringAsFixed(1)}", style: const TextStyle(fontSize: 14)),
         ),
         Slider(value: val, min: min, max: max, onChanged: onCh),
@@ -221,99 +241,109 @@ class _ArrowAppState extends State<ArrowApp> {
   }
 
   void _pickColor(String title, Color initial, Function(Color) onSelect) {
-  // Local state for the dialog
-  Color baseColor = initial.withAlpha(255);
-  int alphaValue = initial.alpha;
+    // Local state for the dialog
+    Color baseColor = initial.withAlpha(255);
+    int alphaValue = initial.alpha;
 
-  final List<Color> colors = [
-    Colors.red, Colors.pink, Colors.purple, Colors.blue,
-    Colors.cyan, Colors.green, Colors.yellow, Colors.orange,
-    Colors.brown, Colors.grey, Colors.black, Colors.white,
-  ];
+    final List<Color> colors = [
+      Colors.red,
+      Colors.pink,
+      Colors.purple,
+      Colors.blue,
+      Colors.cyan,
+      Colors.green,
+      Colors.yellow,
+      Colors.orange,
+      Colors.brown,
+      Colors.grey,
+      Colors.black,
+      Colors.white,
+    ];
 
-  showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (context, setDialogState) {
-        // The actual color being previewed/selected
-        final Color currentColor = baseColor.withAlpha(alphaValue);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          // The actual color being previewed/selected
+          final Color currentColor = baseColor.withAlpha(alphaValue);
 
-        return AlertDialog(
-          title: Text("Select $title"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Color Grid
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: colors.map((c) => GestureDetector(
-                  onTap: () => setDialogState(() => baseColor = c),
-                  child: CircleAvatar(
-                    backgroundColor: c,
-                    radius: 20,
-                    child: baseColor.value == c.value 
-                        ? const Icon(Icons.check, color: Colors.white, size: 20) 
-                        : null,
+          return AlertDialog(
+            title: Text("Select $title"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Color Grid
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: colors
+                      .map(
+                        (c) => GestureDetector(
+                          onTap: () => setDialogState(() => baseColor = c),
+                          child: CircleAvatar(
+                            backgroundColor: c,
+                            radius: 20,
+                            child: baseColor.value == c.value
+                                ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                : null,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 25),
+                // Alpha Slider
+                Row(
+                  children: [
+                    const Icon(Icons.opacity, size: 20),
+                    Expanded(
+                      child: Slider(
+                        value: alphaValue.toDouble(),
+                        min: 0,
+                        max: 255,
+                        divisions: 255,
+                        label: "${(alphaValue / 255 * 100).round()}%",
+                        onChanged: (v) => setDialogState(() => alphaValue = v.toInt()),
+                      ),
+                    ),
+                  ],
+                ),
+                // Preview Box
+                Container(
+                  height: 40,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: currentColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                )).toList(),
-              ),
-              const SizedBox(height: 25),
-              // Alpha Slider
-              Row(
-                children: [
-                  const Icon(Icons.opacity, size: 20),
-                  Expanded(
-                    child: Slider(
-                      value: alphaValue.toDouble(),
-                      min: 0,
-                      max: 255,
-                      divisions: 255,
-                      label: "${(alphaValue / 255 * 100).round()}%",
-                      onChanged: (v) => setDialogState(() => alphaValue = v.toInt()),
+                  child: Center(
+                    child: Text(
+                      "Preview",
+                      style: TextStyle(
+                        color: currentColor.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ],
-              ),
-              // Preview Box
-              Container(
-                height: 40,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: currentColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Center(
-                  child: Text(
-                    "Preview",
-                    style: TextStyle(
-                      color: currentColor.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+              ElevatedButton(
+                onPressed: () {
+                  onSelect(currentColor);
+                  Navigator.pop(ctx);
+                },
+                child: const Text("Select"),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                onSelect(currentColor);
-                Navigator.pop(ctx);
-              },
-              child: const Text("Select"),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _showFilePicker() async {
     final dir = await getExternalStorageDirectory();
@@ -355,7 +385,10 @@ class _ArrowAppState extends State<ArrowApp> {
                               }
                             },
                           ),
-                          onTap: () => isJson ? _loadJsonData(f) : _loadImageOnly(f),
+                          onTap: () {
+                            isJson ? _loadJsonData(f) : _loadImageOnly(f);
+                            _isModified = false;
+                          },
                         );
                       },
                     ),
@@ -448,12 +481,15 @@ class _ArrowAppState extends State<ArrowApp> {
       'arrows': _arrows.map((a) => a.toJson()).toList(),
     };
     await file.writeAsString(jsonEncode(data));
-    setState(() => _lastSavedName = base);
-    if (mounted) {
+    setState(() {
+      _lastSavedName = base;
+      _isModified = false;
+    });
+    /*if (mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Saved $base.json"), duration: const Duration(seconds: 1)));
-    }
+    }*/
   }
 
   void _handleQuickSave() async {
@@ -504,7 +540,10 @@ class _ArrowAppState extends State<ArrowApp> {
             TextButton(
               onPressed: () async {
                 if (await _confirm("Delete Arrow?", "Are you sure?")) {
-                  setState(() => _arrows.remove(arrow));
+                  setState(() {
+                    _arrows.remove(arrow);
+                    _isModified = true;
+                  });
                   if (mounted) Navigator.pop(context);
                 }
               },
@@ -519,11 +558,12 @@ class _ArrowAppState extends State<ArrowApp> {
                   arrow.unit = tUnit;
                   arrow.comment = cCtrl.text;
                   _lastUsedUnit = tUnit;
+                  _isModified = true;
                 });
-                _saveSettings();
+                //_saveSettings();
                 Navigator.pop(context);
               },
-              child: const Text("Save"),
+              child: const Text("Set"),
             ),
           ],
         ),
@@ -577,6 +617,7 @@ class _ArrowAppState extends State<ArrowApp> {
         _mode = AppMode.idle;
         _editingIndex = null;
         _selectedIndex = null;
+        _isModified = true;
       });
       await _showDetailsDialog(arrow);
     } else {
@@ -584,6 +625,7 @@ class _ArrowAppState extends State<ArrowApp> {
         _mode = AppMode.idle;
         _editingIndex = null;
         _selectedIndex = null;
+        _isModified = true;
       });
     }
   }
@@ -704,7 +746,7 @@ class _ArrowAppState extends State<ArrowApp> {
                 child: FloatingActionButton(
                   heroTag: "s",
                   onPressed: _handleQuickSave,
-                  backgroundColor: Colors.green,
+                  backgroundColor: _isModified ? Colors.orangeAccent : Colors.green,
                   mini: true,
                   child: const Icon(Icons.save, color: Colors.white),
                 ),
@@ -723,7 +765,7 @@ class _ArrowAppState extends State<ArrowApp> {
             ],
             FloatingActionButton(
               heroTag: "m",
-              mini: true,
+              //mini: true,
               onPressed: _handleActionButton,
               child: Icon(_mode == AppMode.idle ? Icons.add : Icons.check),
             ),
