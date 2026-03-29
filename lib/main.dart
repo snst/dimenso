@@ -211,7 +211,10 @@ class _ArrowAppState extends State<ArrowApp> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$title: ${val.toStringAsFixed(1)}", style: const TextStyle(fontSize: 12)),
+        Padding(
+          padding: const EdgeInsets.only(left:16),
+          child: Text("$title: ${val.toStringAsFixed(1)}", style: const TextStyle(fontSize: 14)),
+        ),
         Slider(value: val, min: min, max: max, onChanged: onCh),
       ],
     );
@@ -565,6 +568,7 @@ class _ArrowAppState extends State<ArrowApp> {
       setState(() {
         _arrows.insert(0, newArrow);
         _editingIndex = 0;
+        _selectedIndex = 0;
         _mode = AppMode.addingEnd;
       });
     } else if (_mode == AppMode.addingEnd) {
@@ -572,12 +576,14 @@ class _ArrowAppState extends State<ArrowApp> {
       setState(() {
         _mode = AppMode.idle;
         _editingIndex = null;
+        _selectedIndex = null;
       });
       await _showDetailsDialog(arrow);
     } else {
       setState(() {
         _mode = AppMode.idle;
         _editingIndex = null;
+        _selectedIndex = null;
       });
     }
   }
@@ -595,6 +601,7 @@ class _ArrowAppState extends State<ArrowApp> {
       }
       _mode = AppMode.idle;
       _editingIndex = null;
+      _selectedIndex = null;
       _originalPoint = null;
     });
   }
@@ -760,7 +767,7 @@ class _ArrowAppState extends State<ArrowApp> {
               onTap: () => setState(() => _selectedIndex = i),
               title: Text(
                 a.displayInfo.trim().isEmpty ? "Arrow ${_arrows.length - i}" : a.displayInfo,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 14),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -779,6 +786,7 @@ class _ArrowAppState extends State<ArrowApp> {
                       setState(() {
                         _mode = AppMode.editingStart;
                         _editingIndex = i;
+                        _selectedIndex = i;
                         _originalPoint = a.start;
                       });
                     },
@@ -792,6 +800,7 @@ class _ArrowAppState extends State<ArrowApp> {
                       setState(() {
                         _mode = AppMode.editingEnd;
                         _editingIndex = i;
+                        _selectedIndex = i;
                         _originalPoint = a.end;
                       });
                     },
