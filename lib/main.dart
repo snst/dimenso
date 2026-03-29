@@ -190,9 +190,15 @@ class _ArrowAppState extends State<ArrowApp> {
             Row(
               children: [
                 TextButton(
-                  onPressed: () {
-                    _loadSettings();
-                    setState(() {});
+                  onPressed: () async {
+                    // 1. Wait for settings to actually load from SharedPreferences
+                    await _loadSettings();
+
+                    // 2. Trigger the dialog's local rebuild so the UI updates
+                    setST(() {
+                      // The variables like _lineColor, _lineWidth, etc.,
+                      // are already updated by _loadSettings()
+                    });
                   },
                   child: const Text("Load"),
                 ),
@@ -204,7 +210,7 @@ class _ArrowAppState extends State<ArrowApp> {
                   },
                   child: const Text("Save"),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     setState(() {});
@@ -764,8 +770,7 @@ class _ArrowAppState extends State<ArrowApp> {
               const SizedBox(height: 12),
             ],
             FloatingActionButton(
-              heroTag: "m",
-              //mini: true,
+              heroTag: "m", //mini: true,
               onPressed: _handleActionButton,
               child: Icon(_mode == AppMode.idle ? Icons.add : Icons.check),
             ),
