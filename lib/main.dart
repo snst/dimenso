@@ -218,46 +218,99 @@ class _ArrowAppState extends State<ArrowApp> {
   }
 
   void _pickColor(String title, Color initial, Function(Color) onSelect) {
-    final List<Color> colors = [
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.blue,
-      Colors.cyan,
-      Colors.green,
-      Colors.yellow,
-      Colors.orange,
-      Colors.brown,
-      Colors.grey,
-      Colors.black,
-      Colors.white,
-    ];
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Select $title"),
-        content: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: colors
-              .map(
-                (c) => GestureDetector(
-                  onTap: () {
-                    onSelect(c);
-                    Navigator.pop(ctx);
-                  },
+  // Local state for the dialog
+  Color baseColor = initial.withAlpha(255);
+  int alphaValue = initial.alpha;
+
+  final List<Color> colors = [
+    Colors.red, Colors.pink, Colors.purple, Colors.blue,
+    Colors.cyan, Colors.green, Colors.yellow, Colors.orange,
+    Colors.brown, Colors.grey, Colors.black, Colors.white,
+  ];
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        // The actual color being previewed/selected
+        final Color currentColor = baseColor.withAlpha(alphaValue);
+
+        return AlertDialog(
+          title: Text("Select $title"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Color Grid
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: colors.map((c) => GestureDetector(
+                  onTap: () => setDialogState(() => baseColor = c),
                   child: CircleAvatar(
                     backgroundColor: c,
                     radius: 20,
-                    child: c == initial ? const Icon(Icons.check, color: Colors.white) : null,
+                    child: baseColor.value == c.value 
+                        ? const Icon(Icons.check, color: Colors.white, size: 20) 
+                        : null,
+                  ),
+                )).toList(),
+              ),
+              const SizedBox(height: 25),
+              // Alpha Slider
+              Row(
+                children: [
+                  const Icon(Icons.opacity, size: 20),
+                  Expanded(
+                    child: Slider(
+                      value: alphaValue.toDouble(),
+                      min: 0,
+                      max: 255,
+                      divisions: 255,
+                      label: "${(alphaValue / 255 * 100).round()}%",
+                      onChanged: (v) => setDialogState(() => alphaValue = v.toInt()),
+                    ),
+                  ),
+                ],
+              ),
+              // Preview Box
+              Container(
+                height: 40,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: currentColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Center(
+                  child: Text(
+                    "Preview",
+                    style: TextStyle(
+                      color: currentColor.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                onSelect(currentColor);
+                Navigator.pop(ctx);
+              },
+              child: const Text("Select"),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
 
   Future<void> _showFilePicker() async {
     final dir = await getExternalStorageDirectory();
